@@ -49,3 +49,5 @@ htmlcov/
 runs/
 *.mp4
 *.h5
+wandb/
+logs/

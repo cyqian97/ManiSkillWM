@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ManiSkillWM:
+    image:  cyqian97/vulkan:latest
+    container_name: ManiSkillWM
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    shm_size: 128G
+    environment:
+      # - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - /mnt/VOL3/fangzhou/chengyuan/ManiSkillWM:/root/ManiSkillWM
+      - /etc/vulkan/icd.d/nvidia_icd.json:/etc/vulkan/icd.d/nvidia_icd.json:ro
+      - /etc/vulkan/implicit_layer.d/nvidia_layers.json:/etc/vulkan/implicit_layer.d/nvidia_layers.json:ro
+      - /usr/share/glvnd/egl_vendor.d/10_nvidia.json:/usr/share/glvnd/egl_vendor.d/10_nvidia.json:ro 
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: bash

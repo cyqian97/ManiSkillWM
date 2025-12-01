@@ -10,7 +10,7 @@
     "max_episode_steps": 60
   },
   "commit_info": {
-    "commit_id": "488757f684c454d375736e02adce9d1606fce895",
+    "commit_id": "5dd62d862f2ce15d0836595603537230c8f8cd38",
     "branch": "main"
   },
   "episodes": [
