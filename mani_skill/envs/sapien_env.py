@@ -1236,7 +1236,11 @@ class BaseEnv(gym.Env):
         self._human_render_cameras = dict()
         self.scene = None
         self._hidden_objects = []
-        gc.collect() # force gc to collect which releases most GPU memory
+        try:
+            gc.collect()  # force gc to collect which releases most GPU memory
+        except (TypeError, AttributeError) as e:
+            # gc can be None or unavailable during interpreter shutdown
+            print(f"Warning: gc.collect() failed during cleanup: {e}")
 
     def close(self):
         self._clear()

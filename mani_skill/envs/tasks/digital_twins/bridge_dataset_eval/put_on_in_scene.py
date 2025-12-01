@@ -8,6 +8,103 @@ from mani_skill.envs.tasks.digital_twins.bridge_dataset_eval.base_env import (
 )
 from mani_skill.utils.registration import register_env
 
+@register_env(
+    "MyTestEnv-v0",
+    max_episode_steps=60,
+    asset_download_ids=["bridge_v2_real2sim"],
+)
+class MyTestEnv(BaseBridgeEnv):
+    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
+    scene_setting = "flat_table"
+    objects_excluded_from_greenscreening = [
+        "bridge_carrot_generated_modified",
+        "bridge_plate_objaverse_larger",
+    ]
+
+    def __init__(self, **kwargs):
+        xy_center = np.array([-0.16, 0.00])
+        half_edge_length_x = 0.075
+        half_edge_length_y = 0.075
+        grid_pos = np.array([[0, 0], [0, 1], [1, 0], [1, 1]]) * 2 - 1
+        grid_pos = (
+            grid_pos * np.array([half_edge_length_x, half_edge_length_y])[None]
+            + xy_center[None]
+        )
+
+        xyz_configs = []
+        for i, grid_pos_1 in enumerate(grid_pos):
+            for j, grid_pos_2 in enumerate(grid_pos):
+                if i != j:
+                    xyz_configs.append(
+                        np.array(
+                            [
+                                np.append(grid_pos_1, 0.887529),
+                                np.append(grid_pos_2, 0.869532),
+                            ]
+                        )
+                    )
+        xyz_configs = torch.tensor(np.stack(xyz_configs))
+        quat_configs = torch.tensor(
+            np.stack(
+                [
+                    np.array([euler2quat(0, 0, np.pi), [1, 0, 0, 0]]),
+                    np.array([euler2quat(0, 0, -np.pi / 2), [1, 0, 0, 0]]),
+                ]
+            )
+        )
+        source_obj_name = "bridge_carrot_generated_modified"
+        target_obj_name = "bridge_plate_objaverse_larger"
+        super().__init__(
+            obj_names=[source_obj_name, target_obj_name],
+            xyz_configs=xyz_configs,
+            quat_configs=quat_configs,
+            **kwargs,
+        )
+
+    def evaluate(self):
+        info = super()._evaluate(
+            success_require_src_completely_on_target=True,
+        )
+        return info
+
+    def compute_dense_reward(self, obs, action, info):
+        # Get source and target objects
+        source_obj = self.objs[self.source_obj_name]  # carrot
+        target_obj = self.objs[self.target_obj_name]  # plate
+
+        # Stage 1: Reaching reward - encourage TCP to reach the source object
+        # Get TCP position from the ee_gripper_link
+        tcp_pos = self.agent.robot.links_map["ee_gripper_link"].pose.p
+        tcp_to_obj_dist = torch.linalg.norm(
+            source_obj.pose.p - tcp_pos, axis=1
+        )
+        reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
+        reward = reaching_reward
+
+        # Stage 2: Grasping reward - encourage grasping the source object
+        is_grasped = info["is_src_obj_grasped"]
+        reward += is_grasped
+
+        # Stage 3: Placing reward - encourage moving source object to target
+        obj_to_target_dist = torch.linalg.norm(
+            target_obj.pose.p - source_obj.pose.p, axis=1
+        )
+        place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
+        reward += place_reward * is_grasped
+
+        # Stage 4: Success bonus - give maximum reward when task is successful
+        reward[info["success"]] = 4
+        return reward
+
+    def compute_normalized_dense_reward(self, obs, action, info):
+        # Normalize by the maximum possible reward (4)
+        max_reward = 4.0
+        return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
+
+    def get_language_instruction(self, **kwargs):
+        return ["put carrot on plate"] * self.num_envs
+
 
 @register_env(
     "PutCarrotOnPlateInScene-v1",
