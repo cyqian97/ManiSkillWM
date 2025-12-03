@@ -7,6 +7,7 @@ from mani_skill.envs.tasks.digital_twins.bridge_dataset_eval.base_env import (
     BaseBridgeEnv,
 )
 from mani_skill.utils.registration import register_env
+from mani_skill.utils.structs.types import SimConfig
 
 @register_env(
     "MyTestEnv-v0",
@@ -23,6 +24,7 @@ class MyTestEnv(BaseBridgeEnv):
     ]
 
     def __init__(self, **kwargs):
+        self.rgb_overlay_mode = "none"
         xy_center = np.array([-0.16, 0.00])
         half_edge_length_x = 0.075
         half_edge_length_y = 0.075
@@ -86,24 +88,28 @@ class MyTestEnv(BaseBridgeEnv):
         is_grasped = info["is_src_obj_grasped"]
         reward += is_grasped
 
-        # Stage 3: Placing reward - encourage moving source object to target
-        obj_to_target_dist = torch.linalg.norm(
-            target_obj.pose.p - source_obj.pose.p, axis=1
-        )
-        place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
-        reward += place_reward * is_grasped
+        # # Stage 3: Placing reward - encourage moving source object to target
+        # obj_to_target_dist = torch.linalg.norm(
+        #     target_obj.pose.p - source_obj.pose.p, axis=1
+        # )
+        # place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
+        # reward += place_reward * is_grasped
 
-        # Stage 4: Success bonus - give maximum reward when task is successful
-        reward[info["success"]] = 4
+        # # Stage 4: Success bonus - give maximum reward when task is successful
+        # reward[info["success"]] = 4
         return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):
         # Normalize by the maximum possible reward (4)
-        max_reward = 4.0
+        max_reward = 2.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     def get_language_instruction(self, **kwargs):
         return ["put carrot on plate"] * self.num_envs
+    
+    @property
+    def _default_sim_config(self):
+        return SimConfig(sim_freq=100, control_freq=20, spacing=5)
 
 
 @register_env(

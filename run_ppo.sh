@@ -9,12 +9,11 @@ export CUDA_VISIBLE_DEVICES="$CUDA_DEVICE"
 
 # Set W&B API key (optional: set this to your API key to skip wandb login)
 MY_WANDB_API_KEY="${1:-your_default_wandb_api_key}"
-export WANDB_API_KEY="$MY_WANDB_API_KEY"
 
 # Start tmux session and run the command in window 0, logging output to the specified file
 tmux new-session -d -s ppo -x 200 -y 50
 
-tmux send-keys -t ppo:0 "export WANDB_API_KEY=$WANDB_API_KEY" Enter
+tmux send-keys -t ppo:0 "export WANDB_API_KEY=$MY_WANDB_API_KEY" Enter
 
 # Build the command with line breaks for readability
 CMD="conda activate mnsk && python examples/baselines/ppo/ppo_rgb.py \
