@@ -11,7 +11,7 @@ from mani_skill.utils.structs.types import SimConfig
 
 @register_env(
     "MyTestEnv-v0",
-    max_episode_steps=60,
+    max_episode_steps=100,
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class MyTestEnv(BaseBridgeEnv):
@@ -92,7 +92,7 @@ class MyTestEnv(BaseBridgeEnv):
         
         # Stage 3: Consecutive grasping reward - encourage maintaining the grasp
         is_consecutive_grasped = info["consecutive_grasp"]
-        reward += is_consecutive_grasped
+        # reward += is_consecutive_grasped
         
         # Stage 4: Placing reward - encourage moving source object to target
         offset = pos_src - pos_tgt
