@@ -91,7 +91,7 @@ class MyTestEnv(BaseBridgeEnv):
         reward += is_grasped
         
         # Stage 3: Consecutive grasping reward - encourage maintaining the grasp
-        is_consecutive_grasped = info["is_src_obj_consecutively_grasped"]
+        is_consecutive_grasped = info["consecutive_grasp"]
         reward += is_consecutive_grasped
         
         # Stage 4: Placing reward - encourage moving source object to target
@@ -101,7 +101,7 @@ class MyTestEnv(BaseBridgeEnv):
         reward += place_reward * is_consecutive_grasped
 
         # Stage 5: Success bonus - give maximum reward when task is successful
-        reward[info["src_on_target"]] = 5
+        reward[info["success"]] = 5.0
         return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):

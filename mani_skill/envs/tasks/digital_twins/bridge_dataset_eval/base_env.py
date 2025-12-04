@@ -102,7 +102,7 @@ class WidowX250SBridgeDatasetFlatTable(WidowX250S):
             friction=self.arm_friction,
             ee_link="ee_gripper_link",
             urdf_path=self.urdf_path,
-            normalize_action=False,
+            normalize_action=True,
         )
         arm_pd_ee_target_delta_pose_align2 = PDEEPoseControllerConfig(
             **arm_common_kwargs, use_target=True
