@@ -71,15 +71,17 @@ class MyTestEnv(BaseBridgeEnv):
         return info
 
     def compute_dense_reward(self, obs, action, info):
-        # Get source and target objects
+        # Get ee, source and target positions
+        tcp_pos = self.agent.robot.links_map["ee_gripper_link"].pose.p
         source_obj = self.objs[self.source_obj_name]  # carrot
         target_obj = self.objs[self.target_obj_name]  # plate
+        pos_src = source_obj.pose.p
+        pos_tgt = target_obj.pose.p
 
         # Stage 1: Reaching reward - encourage TCP to reach the source object
         # Get TCP position from the ee_gripper_link
-        tcp_pos = self.agent.robot.links_map["ee_gripper_link"].pose.p
         tcp_to_obj_dist = torch.linalg.norm(
-            source_obj.pose.p - tcp_pos, axis=1
+            pos_src - tcp_pos, axis=1
         )
         reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
         reward = reaching_reward
@@ -87,21 +89,25 @@ class MyTestEnv(BaseBridgeEnv):
         # Stage 2: Grasping reward - encourage grasping the source object
         is_grasped = info["is_src_obj_grasped"]
         reward += is_grasped
+        
+        # Stage 3: Consecutive grasping reward - encourage maintaining the grasp
+        is_consecutive_grasped = info["is_src_obj_consecutively_grasped"]
+        reward += is_consecutive_grasped
+        
+        # Stage 4: Placing reward - encourage moving source object to target
+        offset = pos_src - pos_tgt
+        obj_to_target_dist = torch.linalg.norm(offset[:, :2], axis=1)
+        place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
+        reward += place_reward * is_consecutive_grasped
 
-        # # Stage 3: Placing reward - encourage moving source object to target
-        # obj_to_target_dist = torch.linalg.norm(
-        #     target_obj.pose.p - source_obj.pose.p, axis=1
-        # )
-        # place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
-        # reward += place_reward * is_grasped
-
-        # # Stage 4: Success bonus - give maximum reward when task is successful
-        # reward[info["success"]] = 4
+        # Stage 5: Success bonus - give maximum reward when task is successful
+        reward[info["src_on_target"]] = 5
         return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):
-        # Normalize by the maximum possible reward (4)
-        max_reward = 2.0
+        # Normalize by the maximum possible reward (5)
+        # Check the compute_dense_reward method for the value
+        max_reward = 5.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     def get_language_instruction(self, **kwargs):
