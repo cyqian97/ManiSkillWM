@@ -18,7 +18,7 @@ tmux send-keys -t ppo:0 "export WANDB_API_KEY=$MY_WANDB_API_KEY" Enter
 # Build the command with line breaks for readability
 CMD="conda activate mnsk && python examples/baselines/ppo/ppo_rgb.py \
   --env_id=\"PickCube-v1\" \
-  --num_envs=256 \
+  --num_envs=128 \
   --update_epochs=8 \
   --num_minibatches=8 \
   --total_timesteps=10_000_000 \
