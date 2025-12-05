@@ -9,6 +9,8 @@ from mani_skill.envs.tasks.digital_twins.bridge_dataset_eval.base_env import (
 from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs.types import SimConfig
 
+
+
 @register_env(
     "MyTestEnv-v0",
     max_episode_steps=100,
@@ -379,3 +381,91 @@ class PutSpoonOnTableClothInScene(BaseBridgeEnv):
 
     def get_language_instruction(self, **kwargs):
         return ["put the spoon on the towel"] * self.num_envs
+    
+    
+@register_env(
+    "PutSpoonOnTableClothInSceneReward-v0",
+    max_episode_steps=150,
+    asset_download_ids=["bridge_v2_real2sim"],
+)
+class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
+    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
+    def compute_dense_reward(self, obs, action, info):
+        # Get ee, source and target positions
+        tcp_pose = self.agent.robot.links_map["ee_gripper_link"].pose
+        tcp_pos = tcp_pose.p
+        tcp_quat = tcp_pose.q  # quaternion [w, x, y, z]
+
+        source_obj = self.objs[self.source_obj_name]  # spoon
+        target_obj = self.objs[self.target_obj_name]  # tablecloth
+        pos_src = source_obj.pose.p
+        pos_tgt = target_obj.pose.p
+
+        # Stage 1: Reaching reward - encourage TCP to reach the source object
+        # Get TCP position from the ee_gripper_link
+        tcp_to_obj_dist = torch.linalg.norm(
+            pos_src - tcp_pos, axis=1
+        )
+        reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
+        reward = reaching_reward
+
+        # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
+        # For top-down grasp, the gripper's z-axis should point downward (negative z in world frame)
+        # Extract the z-axis of the gripper from the rotation matrix
+        # The z-axis is the third column of the rotation matrix
+        # For quaternion q = [w, x, y, z], the z-axis of the rotated frame is:
+        # z_axis = [2(xz + wy), 2(yz - wx), 1 - 2(x^2 + y^2)]
+        w, x, y, z = tcp_quat[:, 0], tcp_quat[:, 1], tcp_quat[:, 2], tcp_quat[:, 3]
+        gripper_z_axis = torch.stack([
+            2 * (x * z + w * y),
+            2 * (y * z - w * x),
+            1 - 2 * (x * x + y * y)
+        ], dim=1)
+
+        # For top-down grasp, we want the gripper's z-axis to align with world's negative z-axis [0, 0, -1]
+        target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
+        # Compute dot product: 1 means perfectly aligned, -1 means opposite
+        orientation_alignment = (gripper_z_axis * target_orientation).sum(dim=1)
+        # Map from [-1, 1] to [0, 1], where 1 is perfect alignment with downward
+        orientation_reward = (orientation_alignment + 1) / 2
+
+        # Only apply this reward when not grasped yet (to encourage approach from top)
+        is_not_grasped = 1.0 - info["is_src_obj_grasped"].float()
+        reward += orientation_reward * is_not_grasped * 0.5  # Scale down to 0.5 max
+
+        # Stage 2: Grasping reward - encourage grasping the source object
+        is_grasped = info["is_src_obj_grasped"]
+        reward += is_grasped
+        
+        # Stage 3: Consecutive grasping reward - encourage maintaining the grasp
+        is_consecutive_grasped = info["consecutive_grasp"]
+        reward += is_consecutive_grasped
+
+        # # Stage 3.5: Lifting reward - encourage lifting the object above the table
+        # # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
+        # table_height = 0.88
+        # lift_threshold = 0.10  # Target lift height above table
+        # current_lift = torch.clamp(pos_src[:, 2] - table_height, min=0.0)
+        # lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
+        # reward += lifting_reward * is_consecutive_grasped
+
+        # Stage 4: Placing reward - encourage moving source object to target
+        offset = pos_src - pos_tgt
+        obj_to_target_dist = torch.linalg.norm(offset[:, :2], axis=1)
+        place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
+        reward += place_reward * is_consecutive_grasped
+
+        # Stage 5: Success bonus - give maximum reward when task is successful
+        reward[info["success"]] = 6.0
+        return reward
+
+    def compute_normalized_dense_reward(self, obs, action, info):
+        # Normalize by the maximum possible reward (6)
+        # Check the compute_dense_reward method for the value
+        max_reward = 6.0
+        return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
+    
+    @property
+    def _default_sim_config(self):
+        return SimConfig(sim_freq=100, control_freq=20, spacing=5)

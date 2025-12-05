@@ -17,17 +17,18 @@ tmux send-keys -t ppo:0 "export WANDB_API_KEY=$MY_WANDB_API_KEY" Enter
 
 # Build the command with line breaks for readability
 CMD="conda activate mnsk && python examples/baselines/ppo/ppo_rgb.py \
-  --env_id=\"MyTestEnv-v0\" \
-  --num_envs=200 \
+  --env_id=\"PutSpoonOnTableClothInSceneReward-v0\" \
+  --num_envs=512 \
   --control_mode=\"arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos\" \
-  --update_epochs=8 \
+  --update_epochs=4 \
   --num_minibatches=8 \
-  --total_timesteps=10_000_000 \
+  --total_timesteps=20_000_000 \
   --eval_freq=10 \
   --num-steps=20 \
+  --exp_name=\"PutSpoon-ppo_rgb-slower\" \
   --wandb_entity=\"chad_qian_tamu\" \
   --wandb_project_name=\"ManiSkill-PPO\" \
-  --wandb_group=\"MyEnvTest-Experiments\" \
+  --wandb_group=\"PutSpoon-Experiments\" \
   --track"
 
 tmux send-keys -t ppo:0 "$CMD" Enter
