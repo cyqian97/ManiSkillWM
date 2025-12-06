@@ -32,7 +32,7 @@ env = RecordEpisode(
     output_dir="./",           # Directory to save recordings
     save_trajectory=True,                 # Save trajectory data (.h5 + .json)
     save_video=True,                      # Save videos (.mp4)
-    max_steps_per_video=100,             # Required for GPU parallel envs
+    max_steps_per_video=125,             # Required for GPU parallel envs
     video_fps=30,                         # Video frame rate
     trajectory_name="episode",            # Name prefix for saved files
 )

@@ -451,10 +451,15 @@ class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
         reward += lifting_reward * is_consecutive_grasped
 
         # Stage 4: Placing reward - encourage moving source object to target
+        # Only apply this reward when the source object has no contact with the table
+        contact_forces = self.scene.get_pairwise_contact_forces(source_obj, self.arena)
+        net_forces = torch.linalg.norm(contact_forces, dim=1)
+        no_table_contact = (net_forces <= 0.001).float()  # True when no contact with table
+        
         offset = pos_src - pos_tgt
         obj_to_target_dist = torch.linalg.norm(offset[:, :2], axis=1)
         place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
-        reward += place_reward * is_consecutive_grasped
+        reward += place_reward * is_consecutive_grasped * no_table_contact
 
         # Stage 5: Success bonus - give maximum reward when task is successful
         reward[info["success"]] = 7.0

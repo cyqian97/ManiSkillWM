@@ -51,3 +51,4 @@ runs/
 *.h5
 wandb/
 logs/
+episode.json

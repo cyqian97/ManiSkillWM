@@ -302,7 +302,7 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         builder.add_visual_from_file(scene_file, pose=scene_pose)
 
         builder.initial_pose = sapien.Pose(-scene_offset)
-        builder.build_static(name="arena")
+        self.arena = builder.build_static(name="arena")
 
         for name in self.obj_names:
             self.objs[name] = self._build_actor_helper(name)
