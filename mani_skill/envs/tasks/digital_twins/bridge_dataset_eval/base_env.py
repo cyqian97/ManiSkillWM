@@ -92,8 +92,8 @@ class WidowX250SBridgeDatasetFlatTable(WidowX250S):
     def _controller_configs(self):
         arm_common_kwargs = dict(
             joint_names=self.arm_joint_names,
-            pos_lower=-0.005, #1.0,  # dummy limit, which is unused since normalize_action=False
-            pos_upper=0.005, #1.0,
+            pos_lower=-0.01, #1.0,  # dummy limit, which is unused since normalize_action=False
+            pos_upper=0.01, #1.0,
             rot_lower=-np.pi / 40,
             rot_upper=np.pi / 40,
             stiffness=self.arm_stiffness,

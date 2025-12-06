@@ -385,7 +385,7 @@ class PutSpoonOnTableClothInScene(BaseBridgeEnv):
     
 @register_env(
     "PutSpoonOnTableClothInSceneReward-v0",
-    max_episode_steps=150,
+    max_episode_steps=125,
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
@@ -417,16 +417,16 @@ class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
         # For quaternion q = [w, x, y, z], the z-axis of the rotated frame is:
         # z_axis = [2(xz + wy), 2(yz - wx), 1 - 2(x^2 + y^2)]
         w, x, y, z = tcp_quat[:, 0], tcp_quat[:, 1], tcp_quat[:, 2], tcp_quat[:, 3]
-        gripper_z_axis = torch.stack([
-            2 * (x * z + w * y),
-            2 * (y * z - w * x),
-            1 - 2 * (x * x + y * y)
+        gripper_x_axis = torch.stack([ 1 - 2 * ( y * y + z*z),
+            2 * (x * y + w * z),
+            2 * (x * z - w * y),
+           
         ], dim=1)
 
-        # For top-down grasp, we want the gripper's z-axis to align with world's negative z-axis [0, 0, -1]
+        # For top-down grasp, we want the gripper's x-axis to align with world's negative z-axis [0, 0, -1]
         target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
         # Compute dot product: 1 means perfectly aligned, -1 means opposite
-        orientation_alignment = (gripper_z_axis * target_orientation).sum(dim=1)
+        orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
         # Map from [-1, 1] to [0, 1], where 1 is perfect alignment with downward
         orientation_reward = (orientation_alignment + 1) / 2
 
@@ -442,13 +442,13 @@ class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
         is_consecutive_grasped = info["consecutive_grasp"]
         reward += is_consecutive_grasped
 
-        # # Stage 3.5: Lifting reward - encourage lifting the object above the table
-        # # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
-        # table_height = 0.88
-        # lift_threshold = 0.10  # Target lift height above table
-        # current_lift = torch.clamp(pos_src[:, 2] - table_height, min=0.0)
-        # lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
-        # reward += lifting_reward * is_consecutive_grasped
+        # Stage 3.5: Lifting reward - encourage lifting the object above the table
+        # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
+        table_height = 0.88
+        lift_threshold = 0.20  # Target lift height above table
+        current_lift = torch.clamp(pos_src[:, 2] - table_height, min=0.0)
+        lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
+        reward += lifting_reward * is_consecutive_grasped
 
         # Stage 4: Placing reward - encourage moving source object to target
         offset = pos_src - pos_tgt
@@ -457,13 +457,13 @@ class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
         reward += place_reward * is_consecutive_grasped
 
         # Stage 5: Success bonus - give maximum reward when task is successful
-        reward[info["success"]] = 6.0
+        reward[info["success"]] = 7.0
         return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):
-        # Normalize by the maximum possible reward (6)
+        # Normalize by the maximum possible reward (7)
         # Check the compute_dense_reward method for the value
-        max_reward = 6.0
+        max_reward = 7.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
     
     @property

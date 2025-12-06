@@ -350,6 +350,13 @@ if __name__ == "__main__":
                 group=args.wandb_group,
                 tags=["ppo", "walltime_efficient"]
             )
+            # Upload run_ppo.sh script if it exists
+            critical_files = ["run_ppo.sh", "mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/put_on_in_scene.py"]
+            for file in critical_files:
+                if os.path.exists(file):
+                    wandb.save(file, base_path=".", policy="now")
+                else:
+                    print(f"Warning: critical file {file} not found, cannot upload to wandb")
         writer = SummaryWriter(f"runs/{run_name}")
         writer.add_text(
             "hyperparameters",
