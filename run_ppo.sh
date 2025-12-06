@@ -15,13 +15,13 @@ ENV_ID="PutSpoonOnTableClothInSceneReward-v0"
 CONTROL_MODE="arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos"
 NUM_ENVS=512
 NUM_STEPS=25
-NUM_EVAL_STEPS=125
+NUM_EVAL_STEPS=100
 UPDATE_EPOCHS=8
 NUM_MINIBATCHES=8
 TOTAL_TIMESTEPS=10_000_000
 GAMMA=0.95
-CHECKPOINT="runs/PutSpoon-ppo_rgb-orient_corrected-contact_check/final_ckpt.pt"
-EXP_NAME="PutSpoon-ppo_rgb-orient_corrected-contact_check-second_round"
+# CHECKPOINT="runs/PutSpoon-ppo_rgb-orient_corrected-contact_check-second_round/ckpt_676.pt"
+EXP_NAME="PutSpoon-ppo_rgb-from_scratch"
 WANDB_ENTITY="chad_qian_tamu"
 WANDB_PROJECT_NAME="ManiSkill-PPO"
 WANDB_GROUP="PutSpoon-Experiments"
@@ -51,13 +51,13 @@ CMD="conda activate mnsk && python examples/baselines/ppo/ppo_rgb.py \
   --num_minibatches=$NUM_MINIBATCHES \
   --total_timesteps=$TOTAL_TIMESTEPS \
   --gamma=$GAMMA \
-  --checkpoint=\"$CHECKPOINT\" \
   --exp_name=\"$EXP_NAME\" \
   --wandb_entity=\"$WANDB_ENTITY\" \
   --wandb_project_name=\"$WANDB_PROJECT_NAME\" \
   --wandb_group=\"$WANDB_GROUP\" \
   --track"
-
+  # --checkpoint=\"$CHECKPOINT\" \
+  
 tmux send-keys -t ppo:0 "$CMD" Enter
 
 echo "Command started in tmux session 'ppo' window 0"

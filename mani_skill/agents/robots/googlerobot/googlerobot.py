@@ -29,3 +29,4 @@ class GoogleRobot(BaseAgent):
                 intrinsic=np.array([[425.0, 0, 305.0], [0, 413.1, 233.0], [0, 0, 1]]),
             )
         ]
+

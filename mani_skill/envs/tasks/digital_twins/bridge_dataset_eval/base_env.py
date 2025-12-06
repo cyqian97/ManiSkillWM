@@ -199,6 +199,7 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         )
 
         self.consecutive_grasp = None
+        self.near_target = False
         self.episode_stats = None
 
         super().__init__(
@@ -627,26 +628,34 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         is_consecutive_grasped = info["consecutive_grasp"]
         reward += is_consecutive_grasped
 
-        # Stage 3.5: Lifting reward - encourage lifting the object above the table
+        # Stage 4: Lifting reward - encourage lifting the object above the table
         # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
-        lift_threshold = 0.05  # Target lift height above table
+        lift_threshold = 0.01  # Target lift height above table
         current_lift = torch.clamp(pos_src[:, 2] - self.surface_height, min=0.0)
         lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
         reward += lifting_reward * is_consecutive_grasped
 
-        # Stage 4: Placing reward - encourage moving source object to target
-        # Only apply this reward when the source object has no contact with the table
-        place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
-        reward += place_reward * is_consecutive_grasped * no_table_contact
+        # # Stage 5: Placing reward - encourage moving source object to target
+        # # Only apply this reward when the source object has no contact with the table
+        # place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
+        # reward += place_reward * is_consecutive_grasped * no_table_contact
+        
+        # # Stage 6: Bonus for being very close to target
+        # dist_threshold = 0.02
+        # near_target = (obj_to_target_dist < dist_threshold).float() * is_consecutive_grasped * no_table_contact
+        # self.near_target = (
+        #     self.near_target | near_target.bool()
+        # )
+        # reward[self.near_target.bool()] = 6.0
 
         # Stage 5: Success bonus - give maximum reward when task is successful
-        reward[info["success"]] = 7.0
+        # reward[info["success"]] = 7.0
         return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):
         # Normalize by the maximum possible reward (7)
         # Check the compute_dense_reward method for the value
-        max_reward = 7.0
+        max_reward = 4.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     def is_final_subtask(self):

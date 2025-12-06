@@ -117,7 +117,7 @@ class MyTestEnv(BaseBridgeEnv):
     
     @property
     def _default_sim_config(self):
-        return SimConfig(sim_freq=100, control_freq=20, spacing=5)
+        return SimConfig(sim_freq=100, control_freq=20, spacing=20)
 
 
 @register_env(
@@ -385,7 +385,7 @@ class PutSpoonOnTableClothInScene(BaseBridgeEnv):
     
 @register_env(
     "PutSpoonOnTableClothInSceneReward-v0",
-    max_episode_steps=125,
+    max_episode_steps=100,
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
