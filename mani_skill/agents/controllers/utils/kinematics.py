@@ -173,7 +173,7 @@ class Kinematics:
             (x.active_index[0]).cpu().item() for x in self.active_ancestor_joints
         ]
         self.controlled_joints_idx_in_qmask = [
-            self.active_ancestor_joint_idxs.index(idx)
+            self.active_ancestor_joint_idxs.index(idx.cpu().item() if isinstance(idx, torch.Tensor) else idx)
             for idx in self.active_joint_indices
         ]
 

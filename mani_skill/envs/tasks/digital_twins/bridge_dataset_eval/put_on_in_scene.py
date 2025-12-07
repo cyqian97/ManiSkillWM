@@ -384,17 +384,63 @@ class PutSpoonOnTableClothInScene(BaseBridgeEnv):
     
     
 @register_env(
-    "PutSpoonOnTableClothInSceneReward-v0",
+    "PickSpoonScene-v0",
     max_episode_steps=100,
     asset_download_ids=["bridge_v2_real2sim"],
 )
-class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
+class PickSpoonScene(PutSpoonOnTableClothInScene):
     SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
     SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
+    scene_setting = "flat_table"
     objects_excluded_from_greenscreening = [
         "table_cloth_generated_shorter",
         "bridge_spoon_generated_modified",
     ]
+    
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+    @property
+    def _default_sim_config(self):
+        return SimConfig(sim_freq=100, control_freq=20, spacing=5)
+    
+@register_env(
+    "PickCarrotScene-v0",
+    max_episode_steps=100,
+    asset_download_ids=["bridge_v2_real2sim"],
+)
+class PickCarrotScene(PutCarrotOnPlateInScene):
+    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
+    scene_setting = "flat_table"
+    objects_excluded_from_greenscreening = [
+        "bridge_carrot_generated_modified",
+        "bridge_plate_objaverse_larger",
+    ]
+    
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+    @property
+    def _default_sim_config(self):
+        return SimConfig(sim_freq=100, control_freq=20, spacing=5)
+    
+@register_env(
+    "PickEggplantScene-v0",
+    max_episode_steps=100,
+    asset_download_ids=["bridge_v2_real2sim"],
+)
+class PickEggplantScene(PutEggplantInBasketScene):
+    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
+    scene_setting = "sink"
+    objects_excluded_from_greenscreening = ["eggplant"]
     
     def __init__(
         self,

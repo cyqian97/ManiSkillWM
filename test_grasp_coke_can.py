@@ -20,13 +20,14 @@ def save_obs_images(obs, step):
     plt.title("Overhead Camera (640x512) - Mounted on Robot Head")
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig(f"camera_views_step{step}.png", dpi=100, bbox_inches='tight')
-    print(f"  Saved initial camera view to: camera_views_step{step}.png")
+    plt.savefig(f"test_results/camera_views_step{step}.png", dpi=100, bbox_inches='tight')
+    print(f"Saved camera view to: test_results/camera_views_step{step}.png")
     
 # Create environment
 env =  gym.make(
     "GraspSingleOpenedCokeCanInScene-v0",
     num_envs=1,
+    # obs_mode="rgb",
     obs_mode="rgb+segmentation",
     render_mode="rgb_array"
 )
@@ -35,7 +36,7 @@ env = CPUGymWrapper(env)
 # Wrap with RecordEpisode to record trajectories and/or videos
 env = RecordEpisode(
     env,
-    output_dir="./",           # Directory to save recordings
+    output_dir="./test_results",           # Directory to save recordings
     save_trajectory=True,                 # Save trajectory data (.h5 + .json)
     save_video=True,                      # Save videos (.mp4)
     max_steps_per_video=80,             # Required for GPU parallel envs

@@ -225,12 +225,47 @@ class GoogleRobotStatic(GoogleRobot):
     Google Robot with static base (wheels are fixed).
 
     This variant uses a URDF where the wheels are fixed, making it suitable for
-    tabletop manipulation tasks. The robot has 11 controllable joints:
-    - 9 arm joints (including torso, shoulder, bicep, elbow, forearm, wrist, gripper, head_pan, head_tilt)
+    tabletop manipulation tasks. The robot has 9 controllable joints:
+    - 7 arm joints (torso, shoulder, bicep, elbow, forearm, wrist, gripper)
     - 2 gripper (finger) joints
+
+    Note: head_pan and head_tilt are excluded from the arm controller because they are not
+    in the kinematic chain from base to the end-effector.
 
     Based on SimplerEnv's GoogleRobotStaticBase implementation.
     """
     uid = "googlerobot_static"
     urdf_path = f"{ASSET_DIR}/robots/googlerobot/google_robot_static_fixed.urdf"
+
+    # Override arm_joint_names to exclude head joints (not in kinematic chain to gripper)
+    arm_joint_names = [
+        "joint_torso",
+        "joint_shoulder",
+        "joint_bicep",
+        "joint_elbow",
+        "joint_forearm",
+        "joint_wrist",
+        "joint_gripper",
+    ]
+
+    # Override PD parameters to match the 7 arm joints (excluding head joints)
+    arm_stiffness = [
+        1700.0,
+        1737.0471680861954,
+        979.975871856535,
+        930.0,
+        1212.154500274304,
+        432.96500923932535,
+        468.0013365498738,
+    ]
+    arm_damping = [
+        1059.9791902443303,
+        1010.4720585373592,
+        767.2803161582076,
+        680.0,
+        674.9946964336588,
+        274.613381336198,
+        340.532560578637,
+    ]
+    arm_force_limit = [300, 300, 100, 100, 100, 100, 100]
 

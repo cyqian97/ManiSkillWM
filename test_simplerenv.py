@@ -30,7 +30,7 @@ def save_obs_images(env, obs):
     print(f"Saved camera view to: camera_view.png")
 
 env = gym.make(
-  "PutSpoonOnTableClothInSceneReward-v0",
+  "PickCan-v0",
   obs_mode="rgb+segmentation",
 #   obs_mode="rgb",
   num_envs=1, # if num_envs > 1, GPU simulation backend is used.
@@ -49,6 +49,10 @@ env = RecordEpisode(
     video_fps=30,                         # Video frame rate
     trajectory_name="episode",            # Name prefix for saved files
 )
+
+print(f"✓ Environment created: {env.spec.id}")
+print(f"  Observation space: {env.observation_space}")
+print(f"  Action space: {env.action_space}")
 
 obs, _ = env.reset()
 # returns language instruction for each parallel env

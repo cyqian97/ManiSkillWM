@@ -24,7 +24,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
     The greenscreen replaces the background with a real image while keeping the robot and can visible.
     """
 
-    SUPPORTED_OBS_MODES = ("rgb+segmentation",)
+    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation",)
 
     def __init__(self, **kwargs):
         # Greenscreen setup
@@ -47,7 +47,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
 
     @property
     def _default_sim_config(self):
-        return SimConfig(sim_freq=513, control_freq=3, spacing=20)
+        return SimConfig(sim_freq=100, control_freq=20, spacing=20)
 
     @property
     def _default_sensor_configs(self):
@@ -104,6 +104,13 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         self.scene.add_directional_light([-1, -0.5, -1], [0.7, 0.7, 0.7])
         self.scene.add_directional_light([1, 1, -1], [0.7, 0.7, 0.7])
 
+    def _after_reconfigure(self, options: dict):
+        super()._after_reconfigure(options)
+        # Initialize episode state tensors for all environments
+        self.obj_height_after_settle = torch.zeros(self.num_envs, device=self.device)
+        self.consecutive_grasp = torch.zeros(self.num_envs, dtype=torch.int32, device=self.device)
+        self.lifted_obj = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+
     def _load_agent(self, options: dict):
         # Robot initial pose - positioned near table height (table is at ~0.87m)
         # The Google Robot base should be at ground level, assuming the table scene includes the floor
@@ -115,8 +122,10 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
 
             # Initialize robot pose - keep it at ground level
             # The robot base should stay where it was loaded
-            # If you need to reset the robot, use set_qpos for joint positions instead
-            self.agent.robot.set_pose(sapien.Pose([0.35, 0.20, 0.0], [0., 0., 0., 1.]))
+            # Create pose for the environments being reset
+            robot_pos = torch.tensor([0.35, 0.20, 0.0], device=self.device).repeat(b, 1)
+            robot_quat = torch.tensor([0., 0., 0., 1.], device=self.device).repeat(b, 1)
+            self.agent.robot.set_pose(Pose.create_from_pq(robot_pos, robot_quat))
 
             # Drop object from above table (drawer unit)
             obj_init_xy = torch.rand((b, 2), device=self.device) * torch.tensor(
@@ -137,21 +146,17 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
 
             # Settle physics
             self._settle(0.5)
-            self.obj.set_pose(self.obj.pose)  # Prevent sleeping
-            self._settle(0.5)
-
-            # Check if more settling needed
-            lin_vel = torch.linalg.norm(self.obj.linear_velocity, dim=1)
-            ang_vel = torch.linalg.norm(self.obj.angular_velocity, dim=1)
-            if (lin_vel > 1e-3).any() or (ang_vel > 1e-2).any():
-                self._settle(1.5)
+            # Wake up the object to prevent sleeping by re-setting its current pose
+            current_pose = self.obj.pose
+            self.obj.set_pose(Pose.create_from_pq(current_pose.p[env_idx], current_pose.q[env_idx]))
+            self._settle(6.0)
 
             # Record settled height
-            self.obj_height_after_settle = self.obj.pose.p[:, 2].clone()
+            self.obj_height_after_settle[env_idx] = self.obj.pose.p[env_idx, 2]
 
             # Reset episode state
-            self.consecutive_grasp = torch.zeros(self.num_envs, dtype=torch.int32, device=self.device)
-            self.lifted_obj = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+            self.consecutive_grasp[env_idx] = 0
+            self.lifted_obj[env_idx] = False
 
     def _settle(self, t: float):
         """Run simulation for t seconds to settle objects."""
@@ -204,12 +209,67 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         }
 
     def compute_dense_reward(self, obs, action, info):
-        """Simple sparse reward: 1 if success, 0 otherwise."""
-        return info["success"].float()
+        """Multi-stage dense reward following base_env.py structure."""
+        # Get ee (TCP) position and orientation
+        tcp_pose = self.agent.robot.links_map["link_gripper_tcp"].pose
+        tcp_pos = tcp_pose.p
+        tcp_quat = tcp_pose.q  # quaternion [w, x, y, z]
+        w, x, y, z = tcp_quat[:, 0], tcp_quat[:, 1], tcp_quat[:, 2], tcp_quat[:, 3]
+
+        # Compute gripper x-axis direction (for orientation reward)
+        gripper_x_axis = torch.stack([
+            1 - 2 * (y * y + z * z),
+            2 * (x * y + w * z),
+            2 * (x * z - w * y),
+        ], dim=1)
+
+        # Get object position
+        pos_obj = self.obj.pose.p
+
+        # Compute reward-related values
+        tcp_to_obj_dist = torch.linalg.norm(pos_obj - tcp_pos, dim=1)
+
+        # # Check if object has contact with table
+        # contact_forces = self.scene.get_pairwise_contact_forces(self.obj, self.arena)
+        # net_forces = torch.linalg.norm(contact_forces, dim=1)
+        # no_table_contact = (net_forces <= 1e-6).float()  # True when no contact with table
+
+        # Stage 1: Reaching reward - encourage TCP to reach the object
+        reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
+        reward = reaching_reward
+
+        # # Stage 2: Gripper orientation reward - encourage top-down grasping pose
+        # # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
+        # target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
+        # orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
+        # orientation_reward = (orientation_alignment + 1) / 2
+        # is_not_grasped = 1.0 - info["is_grasped"].float()
+        # reward += orientation_reward * is_not_grasped * 0.5  # Only apply when not grasped yet
+
+        # # Stage 3: Grasping reward - encourage grasping the object
+        # is_grasped = info["is_grasped"]
+        # reward += is_grasped
+
+        # # Stage 4: Consecutive grasping reward - encourage maintaining the grasp
+        # is_consecutive_grasped = info["consecutive_grasp"]
+        # reward += is_consecutive_grasped
+
+        # # Stage 5: Lifting reward - encourage lifting the object above the table
+        # lift_threshold = 0.02  # Target lift height above settled position
+        # current_lift = torch.clamp(pos_obj[:, 2] - self.obj_height_after_settle, min=0.0)
+        # lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
+        # reward += lifting_reward * is_consecutive_grasped
+
+        # Stage 6: Success bonus - give maximum reward when task is successful
+        reward[info["success"]] = 2.0
+
+        return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):
-        """Normalized version of dense reward."""
-        return self.compute_dense_reward(obs, action, info)
+        """Normalize by the maximum possible reward (2.0)."""
+        # Maximum reward is 2.0 from success bonus
+        max_reward = 2.0
+        return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     def get_language_instruction(self, **kwargs):
         return ["pick opened coke can"] * self.num_envs

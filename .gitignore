@@ -52,3 +52,4 @@ runs/
 wandb/
 logs/
 episode.json
+test_results/
