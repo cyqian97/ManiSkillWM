@@ -32,7 +32,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
             "overhead_camera": str(ASSET_DIR / "scene_datasets/simpler_env/google_coke_can_real_eval_1.png")
         }
         # RGB overlay mode: "background" (default), "debug" (50/50 blend), or "none" (disabled)
-        self.rgb_overlay_mode = "debug"  # Change to "debug" for 50/50 visualization
+        self.rgb_overlay_mode = "background"  # Change to "debug" for 50/50 visualization
 
         # Object properties
         self.obj_bbox = np.array([0.066, 0.123, 0.066])  # Coke can bbox
@@ -43,7 +43,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         self.lifted_obj = False
         self.obj_height_after_settle = None
 
-        super().__init__(robot_uids="googlerobot", **kwargs)
+        super().__init__(robot_uids="googlerobot_static", **kwargs)
 
     @property
     def _default_sim_config(self):
@@ -58,7 +58,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
     def _default_human_render_camera_configs(self):
         return CameraConfig(
             "render_camera",
-            pose=sapien.Pose([5.0, 1.0, 15.0], euler2quat(0, np.pi/2, 0)),
+            pose=sapien.Pose([0.0, 0.0, 2.0], euler2quat(0, np.pi/2, np.pi)),
             width=512, height=512, fov=1, near=0.01, far=100
         )
 
@@ -105,19 +105,18 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         self.scene.add_directional_light([1, 1, -1], [0.7, 0.7, 0.7])
 
     def _load_agent(self, options: dict):
-        # Robot initial pose
-        super()._load_agent(options, sapien.Pose(p=[0.35, 0.20, 0.06205 + 0.017], q=[0,0,0,1]))
+        # Robot initial pose - positioned near table height (table is at ~0.87m)
+        # The Google Robot base should be at ground level, assuming the table scene includes the floor
+        super()._load_agent(options, sapien.Pose(p=[0.35, 0.20, 0.0], q=[0,0,0,1]))
 
     def _initialize_episode(self, env_idx: torch.Tensor, options: dict):
         with torch.device(self.device):
             b = len(env_idx)
 
-            # Initialize robot
-            # qpos = torch.tensor([
-            #     -0.264, 0.083, 0.502, 1.157, 0.029, 1.593, -1.081, 0, 0, -0.003, 0.785
-            # ], device=self.device)
-            # self.agent.robot.set_qpos(qpos)
-            self.agent.robot.set_pose(sapien.Pose([0.35, 0.20, 0.07905], [0,0,0,1]))
+            # Initialize robot pose - keep it at ground level
+            # The robot base should stay where it was loaded
+            # If you need to reset the robot, use set_qpos for joint positions instead
+            self.agent.robot.set_pose(sapien.Pose([0.35, 0.20, 0.0], [0., 0., 0., 1.]))
 
             # Drop object from above table (drawer unit)
             obj_init_xy = torch.rand((b, 2), device=self.device) * torch.tensor(

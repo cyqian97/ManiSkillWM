@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 # from simpler_env.utils.env.observation_utils import get_image_from_maniskill3_obs_dict
 from mani_skill.envs.tasks.digital_twins.bridge_dataset_eval import *
 from mani_skill.utils.wrappers.record import RecordEpisode
+from mani_skill.utils.wrappers import CPUGymWrapper
+
 
 def get_image_from_maniskill3_obs_dict(env, obs, camera_name=None):
     import torch
@@ -14,18 +16,29 @@ def get_image_from_maniskill3_obs_dict(env, obs, camera_name=None):
             camera_name = "3rd_view_camera"
         else:
             raise NotImplementedError()
-    img = obs["sensor_data"][camera_name]["rgb"]
-    return img.to(torch.uint8)
+    return obs["sensor_data"][camera_name]["rgb"]
+
+def save_obs_images(env, obs):
+    img = get_image_from_maniskill3_obs_dict(env, obs)
+    # img = img.cpu().numpy()
+    # Create visualization
+    plt.figure(figsize=(8, 6))
+    plt.imshow(img)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(f"camera_view.png", dpi=100, bbox_inches='tight')
+    print(f"Saved camera view to: camera_view.png")
 
 env = gym.make(
   "PutSpoonOnTableClothInSceneReward-v0",
-  # obs_mode="rgb+segmentation",
-  obs_mode="rgb",
+  obs_mode="rgb+segmentation",
+#   obs_mode="rgb",
   num_envs=1, # if num_envs > 1, GPU simulation backend is used.
   render_mode="rgb_array",
   reward_mode="normalized_dense",
 )
 
+env = CPUGymWrapper(env)
 # Wrap with RecordEpisode to record trajectories and/or videos
 env = RecordEpisode(
     env,
@@ -45,19 +58,21 @@ obs, _ = env.reset()
 # Get the first image and display it
 # image = get_image_from_maniskill3_obs_dict(env, obs) # this is the image observation for policy inference
 
+save_obs_images(env, obs)
+
 i = 0
 
 while True:
     # action[:3]: delta xyz; action[3:6]: delta rotation in axis-angle representation;
     # action[6:7]: gripper (the meaning of open / close depends on robot URDF)
-    # image = get_image_from_maniskill3_obs_dict(env, obs) # this is the image observation for policy inference
+    image = get_image_from_maniskill3_obs_dict(env, obs) # this is the image observation for policy inference
 
     action = env.action_space.sample() # replace this with your policy inference
     for j in range(len(action)): action[j]=0.0  # test the limits
     action[-1] = -1.0
     obs, reward, terminated, truncated, info = env.step(action)
     print("Reward:", reward)
-    if truncated.any():
+    if truncated:
         break
 print("Episode Info", info)
 env.close() 

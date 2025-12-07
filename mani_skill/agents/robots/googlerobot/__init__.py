@@ -1,1 +1,1 @@
-from .googlerobot import GoogleRobot
+from .googlerobot import GoogleRobot, GoogleRobotStatic

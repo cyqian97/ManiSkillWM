@@ -26,7 +26,7 @@ class MyTestEnv(BaseBridgeEnv):
     ]
 
     def __init__(self, **kwargs):
-        self.rgb_overlay_mode = "none"
+        self.rgb_overlay_mode = "background"  # Change to "debug" for 50/50 visualization
         xy_center = np.array([-0.16, 0.00])
         half_edge_length_x = 0.075
         half_edge_length_y = 0.075
@@ -391,7 +391,17 @@ class PutSpoonOnTableClothInScene(BaseBridgeEnv):
 class PutSpoonOnTableClothInSceneReward(PutSpoonOnTableClothInScene):
     SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
     SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
+    objects_excluded_from_greenscreening = [
+        "table_cloth_generated_shorter",
+        "bridge_spoon_generated_modified",
+    ]
     
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
     @property
     def _default_sim_config(self):
         return SimConfig(sim_freq=100, control_freq=20, spacing=5)
