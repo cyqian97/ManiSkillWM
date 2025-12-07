@@ -16,7 +16,7 @@ from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs.types import SimConfig
 from mani_skill.utils.structs.pose import Pose
 
-@register_env("GraspSingleOpenedCokeCanInScene-v0", max_episode_steps=80)
+@register_env("GraspSingleOpenedCokeCanInScene-v0", max_episode_steps=100)
 class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
     """Pick up an opened coke can from a table. SimplerEnv digital twin environment.
 
