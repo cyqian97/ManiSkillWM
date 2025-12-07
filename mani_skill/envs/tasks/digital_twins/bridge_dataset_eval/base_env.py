@@ -604,7 +604,7 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         
         contact_forces = self.scene.get_pairwise_contact_forces(source_obj, self.arena)
         net_forces = torch.linalg.norm(contact_forces, dim=1)
-        no_table_contact = (net_forces <= 0.001).float()  # True when no contact with table
+        no_table_contact = (net_forces <= 0.001)  # True when no contact with table
         
         
         # Stage 1: Reaching reward - encourage TCP to reach the source object
@@ -612,13 +612,13 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
         reward = reaching_reward
 
-        # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
-        # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
-        target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
-        orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
-        orientation_reward = (orientation_alignment + 1) / 2
-        is_not_grasped = 1.0 - info["is_src_obj_grasped"].float() 
-        reward += orientation_reward * is_not_grasped * 0.5 # Only apply this reward when not grasped yet 
+        # # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
+        # # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
+        # target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
+        # orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
+        # orientation_reward = (orientation_alignment + 1) / 2
+        # is_not_grasped = 1.0 - info["is_src_obj_grasped"].float() 
+        # reward += orientation_reward * is_not_grasped * 0.5 # Only apply this reward when not grasped yet 
 
         # Stage 2: Grasping reward - encourage grasping the source object
         is_grasped = info["is_src_obj_grasped"]
@@ -628,17 +628,17 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         is_consecutive_grasped = info["consecutive_grasp"]
         reward += is_consecutive_grasped
 
-        # Stage 4: Lifting reward - encourage lifting the object above the table
-        # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
-        lift_threshold = 0.02  # Target lift height above table
-        current_lift = torch.clamp(pos_src[:, 2] - self.surface_height, min=0.0)
-        lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
-        reward += lifting_reward * is_consecutive_grasped
+        # # Stage 4: Lifting reward - encourage lifting the object above the table
+        # # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
+        # lift_threshold = 0.02  # Target lift height above table
+        # current_lift = torch.clamp(pos_src[:, 2] - self.surface_height, min=0.0)
+        # lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
+        # reward += lifting_reward * is_consecutive_grasped
 
-        # # Stage 5: Placing reward - encourage moving source object to target
-        # # Only apply this reward when the source object has no contact with the table
+        # Stage 5: Placing reward - encourage moving source object to target
+        # Only apply this reward when the source object has no contact with the table
         # place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
-        # reward += place_reward * is_consecutive_grasped * no_table_contact
+        reward[(no_table_contact & is_consecutive_grasped)] =4.0
         
         # # Stage 6: Bonus for being very close to target
         # dist_threshold = 0.02

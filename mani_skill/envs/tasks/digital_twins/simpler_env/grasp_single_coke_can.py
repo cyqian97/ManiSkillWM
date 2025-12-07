@@ -131,7 +131,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
             obj_init_xy = torch.rand((b, 2), device=self.device) * torch.tensor(
                 [0.23, 0.44], device=self.device
             ) + torch.tensor([-0.35, -0.02], device=self.device)
-            obj_init_z = 0.87 + 0.5  # table height + drop height
+            obj_init_z = 0.87 + 0.2  # table height + drop height
 
             # Random orientation
             ori_z = torch.rand(b, device=self.device) * 2 * np.pi
@@ -238,7 +238,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
         reward = reaching_reward
 
-        # # Stage 2: Gripper orientation reward - encourage top-down grasping pose
+        # # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
         # # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
         # target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
         # orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
@@ -246,13 +246,13 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         # is_not_grasped = 1.0 - info["is_grasped"].float()
         # reward += orientation_reward * is_not_grasped * 0.5  # Only apply when not grasped yet
 
-        # # Stage 3: Grasping reward - encourage grasping the object
-        # is_grasped = info["is_grasped"]
-        # reward += is_grasped
+        # Stage 2: Grasping reward - encourage grasping the object
+        is_grasped = info["is_grasped"]
+        reward += is_grasped
 
-        # # Stage 4: Consecutive grasping reward - encourage maintaining the grasp
-        # is_consecutive_grasped = info["consecutive_grasp"]
-        # reward += is_consecutive_grasped
+        # Stage 3: Consecutive grasping reward - encourage maintaining the grasp
+        is_consecutive_grasped = info["consecutive_grasp"]
+        reward += is_consecutive_grasped
 
         # # Stage 5: Lifting reward - encourage lifting the object above the table
         # lift_threshold = 0.02  # Target lift height above settled position
@@ -260,15 +260,15 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         # lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
         # reward += lifting_reward * is_consecutive_grasped
 
-        # Stage 6: Success bonus - give maximum reward when task is successful
-        reward[info["success"]] = 2.0
+        # Stage 4: Success bonus - give maximum reward when task is successful
+        reward[info["success"]] = 4.0
 
         return reward
 
     def compute_normalized_dense_reward(self, obs, action, info):
-        """Normalize by the maximum possible reward (2.0)."""
-        # Maximum reward is 2.0 from success bonus
-        max_reward = 2.0
+        """Normalize by the maximum possible reward (4.0)."""
+        # Maximum reward is 4.0 from success bonus
+        max_reward = 4.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     def get_language_instruction(self, **kwargs):
