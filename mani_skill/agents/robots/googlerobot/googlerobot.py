@@ -133,6 +133,7 @@ class GoogleRobot(BaseAgent):
         900,
     ]
     arm_force_limit = [300, 300, 100, 100, 100, 100, 100, 100, 100]
+    arm_friction = 0.0
 
     gripper_stiffness = 200
     gripper_damping = 8
@@ -145,30 +146,34 @@ class GoogleRobot(BaseAgent):
         # -------------------------------------------------------------------------- #
         arm_pd_ee_delta_pose = PDEEPoseControllerConfig(
             joint_names=self.arm_joint_names,
-            pos_lower=-0.1,
-            pos_upper=0.1,
-            rot_lower=-0.1,
-            rot_upper=0.1,
+            pos_lower=-1.0,
+            pos_upper=1.0,
+            rot_lower=-np.pi / 2,
+            rot_upper=np.pi / 2,
             stiffness=self.arm_stiffness,
             damping=self.arm_damping,
             force_limit=self.arm_force_limit,
+            friction=self.arm_friction,
             ee_link=self.ee_link_name,
             urdf_path=self.urdf_path,
             normalize_action=False,
+            drive_mode="force",
         )
         arm_pd_ee_delta_pose_align = PDEEPoseControllerConfig(
             joint_names=self.arm_joint_names,
-            pos_lower=-0.1,
-            pos_upper=0.1,
-            rot_lower=-0.1,
-            rot_upper=0.1,
+            pos_lower=-1.0,
+            pos_upper=1.0,
+            rot_lower=-np.pi / 2,
+            rot_upper=np.pi / 2,
             stiffness=self.arm_stiffness,
             damping=self.arm_damping,
             force_limit=self.arm_force_limit,
+            friction=self.arm_friction,
             ee_link=self.ee_link_name,
             urdf_path=self.urdf_path,
             frame="ee_align",
             normalize_action=False,
+            drive_mode="force",
         )
 
         # -------------------------------------------------------------------------- #
@@ -183,6 +188,7 @@ class GoogleRobot(BaseAgent):
             damping=self.gripper_damping,
             force_limit=self.gripper_force_limit,
             normalize_action=True,
+            drive_mode="force",
         )
 
         controller_configs = dict(

@@ -217,10 +217,10 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         w, x, y, z = tcp_quat[:, 0], tcp_quat[:, 1], tcp_quat[:, 2], tcp_quat[:, 3]
 
         # Compute gripper x-axis direction (for orientation reward)
-        gripper_x_axis = torch.stack([
-            1 - 2 * (y * y + z * z),
-            2 * (x * y + w * z),
-            2 * (x * z - w * y),
+        gripper_z_axis = torch.stack([
+            2 * (x * z + w * y),
+            2 * (y * z - w * x),
+            1 - 2 * (x * x + y * y),
         ], dim=1)
 
         # Get object position
@@ -241,7 +241,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
         # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
         target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
-        orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
+        orientation_alignment = (gripper_z_axis * target_orientation).sum(dim=1)
         orientation_reward = (orientation_alignment + 1) / 2
         is_not_grasped = 1.0 - info["is_grasped"].float()
         reward += orientation_reward * is_not_grasped * 0.5  # Only apply when not grasped yet

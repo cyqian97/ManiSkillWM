@@ -351,7 +351,9 @@ if __name__ == "__main__":
                 tags=["ppo", "walltime_efficient"]
             )
             # Upload run_ppo.sh script if it exists
-            critical_files = ["run_ppo.sh", "mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/put_on_in_scene.py"]
+            critical_files = ["run_ppo.sh", "mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/put_on_in_scene.py",
+                              "mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/base_env.py",
+                              "mani_skill/envs/tasks/digital_twins/simpler_env/grasp_single_coke_can.py"]
             for file in critical_files:
                 if os.path.exists(file):
                     wandb.save(file, base_path=".", policy="now")
