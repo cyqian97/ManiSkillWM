@@ -1,19 +1,18 @@
 #!/bin/bash
 
 # Set tmux session name
-TMUX_SESSION="ppo-can"
+TMUX_SESSION="ppo-eggplant"
 
 # Set CUDA device (default to 0 if not provided)
 CUDA_DEVICE="0"
-# export CUDA_VISIBLE_DEVICES="$CUDA_DEVICE"
 
 # Set W&B API key (optional: set this to your API key to skip wandb login)
 MY_WANDB_API_KEY="${1:-your_default_wandb_api_key}"
 
 # PPO Training Parameters
-ENV_ID="GraspSingleOpenedCokeCanInScene-v0"
-# CONTROL_MODE="arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos"
-CONTROL_MODE="pd_ee_delta_pose"
+ENV_ID="PickEggplantScene-v0"
+CONTROL_MODE="arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos"
+# CONTROL_MODE="pd_ee_delta_pose"
 NUM_ENVS=512
 NUM_STEPS=25
 NUM_EVAL_STEPS=100
@@ -22,10 +21,10 @@ NUM_MINIBATCHES=8
 TOTAL_TIMESTEPS=10_000_000
 GAMMA=0.95
 # CHECKPOINT="runs/PutSpoon-ppo_rgb-orient_corrected-contact_check-second_round/ckpt_676.pt"
-EXP_NAME="GraspSingleOpenedCokeCanInScene-ppo_rgb-from_scratch"
+EXP_NAME="PickEggplantScene-ppo_rgb-orient-from_scratch"
 WANDB_ENTITY="chad_qian_tamu"
 WANDB_PROJECT_NAME="ManiSkill-PPO"
-WANDB_GROUP="GraspSingleOpenedCokeCanInScene-Experiments"
+WANDB_GROUP="PickEggplantScene-Experiments"
 
 
 

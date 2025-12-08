@@ -612,13 +612,13 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
         reward = reaching_reward
 
-        # # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
-        # # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
-        # target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
-        # orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
-        # orientation_reward = (orientation_alignment + 1) / 2
-        # is_not_grasped = 1.0 - info["is_src_obj_grasped"].float() 
-        # reward += orientation_reward * is_not_grasped * 0.5 # Only apply this reward when not grasped yet 
+        # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
+        # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
+        target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
+        orientation_alignment = (gripper_x_axis * target_orientation).sum(dim=1)
+        orientation_reward = (orientation_alignment + 1) / 2
+        is_not_grasped = 1.0 - info["is_src_obj_grasped"].float() 
+        reward += orientation_reward * is_not_grasped * 0.5 # Only apply this reward when not grasped yet 
 
         # Stage 2: Grasping reward - encourage grasping the source object
         is_grasped = info["is_src_obj_grasped"]
