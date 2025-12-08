@@ -146,25 +146,25 @@ class GoogleRobot(BaseAgent):
         # -------------------------------------------------------------------------- #
         arm_pd_ee_delta_pose = PDEEPoseControllerConfig(
             joint_names=self.arm_joint_names,
-            pos_lower=-1.0,
-            pos_upper=1.0,
-            rot_lower=-np.pi / 2,
-            rot_upper=np.pi / 2,
+            pos_lower=-0.01, #1.0,  # dummy limit, which is unused since normalize_action=False
+            pos_upper=0.01, #1.0,
+            rot_lower=-np.pi / 40,
+            rot_upper=np.pi / 40,
             stiffness=self.arm_stiffness,
             damping=self.arm_damping,
             force_limit=self.arm_force_limit,
             friction=self.arm_friction,
             ee_link=self.ee_link_name,
             urdf_path=self.urdf_path,
-            normalize_action=False,
+            normalize_action=True,
             drive_mode="force",
         )
         arm_pd_ee_delta_pose_align = PDEEPoseControllerConfig(
             joint_names=self.arm_joint_names,
-            pos_lower=-1.0,
-            pos_upper=1.0,
-            rot_lower=-np.pi / 2,
-            rot_upper=np.pi / 2,
+            pos_lower=-0.05, #1.0,  # dummy limit, which is unused since normalize_action=False
+            pos_upper=0.05, #1.0,
+            rot_lower=-np.pi / 10,
+            rot_upper=np.pi / 10,
             stiffness=self.arm_stiffness,
             damping=self.arm_damping,
             force_limit=self.arm_force_limit,
@@ -172,7 +172,7 @@ class GoogleRobot(BaseAgent):
             ee_link=self.ee_link_name,
             urdf_path=self.urdf_path,
             frame="ee_align",
-            normalize_action=False,
+            normalize_action=True,
             drive_mode="force",
         )
 
@@ -240,7 +240,7 @@ class GoogleRobotStatic(GoogleRobot):
 
     Based on SimplerEnv's GoogleRobotStaticBase implementation.
     """
-    uid = "googlerobot_static"
+    uid = "google_robot_static"
     urdf_path = f"{ASSET_DIR}/robots/googlerobot/google_robot_static_fixed.urdf"
 
     # Override arm_joint_names to exclude head joints (not in kinematic chain to gripper)
@@ -275,3 +275,64 @@ class GoogleRobotStatic(GoogleRobot):
     ]
     arm_force_limit = [300, 300, 100, 100, 100, 100, 100]
 
+    @property
+    def _controller_configs(self):
+        # -------------------------------------------------------------------------- #
+        # Arm
+        # -------------------------------------------------------------------------- #
+        arm_pd_ee_delta_pose = PDEEPoseControllerConfig(
+            joint_names=self.arm_joint_names,
+            pos_lower=-1.0, #1.0,  # dummy limit, which is unused since normalize_action=False
+            pos_upper=1.0, #1.0,
+            rot_lower=-np.pi / 5,
+            rot_upper=np.pi / 5,
+            stiffness=self.arm_stiffness,
+            damping=self.arm_damping,
+            force_limit=self.arm_force_limit,
+            friction=self.arm_friction,
+            ee_link=self.ee_link_name,
+            urdf_path=self.urdf_path,
+            normalize_action=True,
+            drive_mode="force",
+        )
+        arm_pd_ee_delta_pose_align = PDEEPoseControllerConfig(
+            joint_names=self.arm_joint_names,
+            pos_lower=-1.0, #1.0,  # dummy limit, which is unused since normalize_action=False
+            pos_upper=1.0, #1.0,
+            rot_lower=-np.pi / 5,
+            rot_upper=np.pi / 5,
+            stiffness=self.arm_stiffness,
+            damping=self.arm_damping,
+            force_limit=self.arm_force_limit,
+            friction=self.arm_friction,
+            ee_link=self.ee_link_name,
+            urdf_path=self.urdf_path,
+            frame="ee_align",
+            normalize_action=True,
+            drive_mode="force",
+        )
+
+        # -------------------------------------------------------------------------- #
+        # Gripper
+        # -------------------------------------------------------------------------- #
+        # Mimic joint configuration for Google Robot gripper
+        gripper_pd_joint_pos = PDJointPosMimicControllerConfig(
+            joint_names=self.gripper_joint_names,
+            lower=-1.3 - 0.01,  # trick to have force when grasping
+            upper=1.3 + 0.01,
+            stiffness=self.gripper_stiffness,
+            damping=self.gripper_damping,
+            force_limit=self.gripper_force_limit,
+            normalize_action=True,
+            drive_mode="force",
+        )
+
+        controller_configs = dict(
+            pd_ee_delta_pose=dict(arm=arm_pd_ee_delta_pose, gripper=gripper_pd_joint_pos),
+            pd_ee_delta_pose_align=dict(
+                arm=arm_pd_ee_delta_pose_align, gripper=gripper_pd_joint_pos
+            ),
+        )
+
+        # Make deepcopy
+        return deepcopy(controller_configs)

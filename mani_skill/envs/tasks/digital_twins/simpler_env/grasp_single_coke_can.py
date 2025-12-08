@@ -43,7 +43,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
         self.lifted_obj = False
         self.obj_height_after_settle = None
 
-        super().__init__(robot_uids="googlerobot_static", **kwargs)
+        super().__init__(robot_uids="google_robot_static", **kwargs)
 
     @property
     def _default_sim_config(self):
@@ -58,7 +58,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
     def _default_human_render_camera_configs(self):
         return CameraConfig(
             "render_camera",
-            pose=sapien.Pose([0.0, 0.0, 2.0], euler2quat(0, np.pi/2, np.pi)),
+            pose=sapien.Pose([0.0, 0.5, 2.3], euler2quat(0, np.pi/2, np.pi)),
             width=512, height=512, fov=1, near=0.01, far=100
         )
 
@@ -119,12 +119,41 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
     def _initialize_episode(self, env_idx: torch.Tensor, options: dict):
         with torch.device(self.device):
             b = len(env_idx)
+                        # qpos =torch.tensor(
+            #     [
+            #     -0.2639457174606611,
+            #     # 0.0831913360274175,
+            #     0,
+            #     0.5017611504652179,
+            #     # 1.156859026208673,
+            #     0,
+            #     0.028583671314766423,
+            #     1.592598203487462,
+            #     -1.080652960128774,
+            #     0, 0,
+            #     -0.00285961, 0.7851361
+            #     ]
+            # , device=self.device)
+            qpos =torch.tensor(
+                [
+                0,
+                0,
+                0,
+                0,
+                0.028583671314766423,
+                1.592598203487462,
+                -1.080652960128774,
+                0, 0,
+                -0.00285961, 0.7851361
+                ]
+            , device=self.device)
+            
 
             # Initialize robot pose - keep it at ground level
             # The robot base should stay where it was loaded
             # Create pose for the environments being reset
-            robot_pos = torch.tensor([0.35, 0.20, 0.0], device=self.device).repeat(b, 1)
-            robot_quat = torch.tensor([0., 0., 0., 1.], device=self.device).repeat(b, 1)
+            robot_pos = torch.tensor([0.35, 0.20, 0.0], device=self.device)
+            robot_quat = torch.tensor([0., 0., 0., 1.], device=self.device)
             self.agent.robot.set_pose(Pose.create_from_pq(robot_pos, robot_quat))
 
             # Drop object from above table (drawer unit)
@@ -145,12 +174,13 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
             self.obj.set_pose(Pose.create_from_pq(xyz, quat))
 
             # Settle physics
-            self._settle(0.5)
             # Wake up the object to prevent sleeping by re-setting its current pose
             current_pose = self.obj.pose
             self.obj.set_pose(Pose.create_from_pq(current_pose.p[env_idx], current_pose.q[env_idx]))
+            
             self._settle(6.0)
-
+            self.agent.robot.set_qpos(qpos)
+            
             # Record settled height
             self.obj_height_after_settle[env_idx] = self.obj.pose.p[env_idx, 2]
 

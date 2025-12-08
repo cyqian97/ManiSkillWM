@@ -4,7 +4,7 @@
 TMUX_SESSION="ppo-can"
 
 # Set CUDA device (default to 0 if not provided)
-CUDA_DEVICE="0"
+CUDA_DEVICE="1"
 
 # Set W&B API key (optional: set this to your API key to skip wandb login)
 MY_WANDB_API_KEY="${1:-your_default_wandb_api_key}"
@@ -21,7 +21,7 @@ NUM_MINIBATCHES=8
 TOTAL_TIMESTEPS=10_000_000
 GAMMA=0.95
 # CHECKPOINT="runs/PutSpoon-ppo_rgb-orient_corrected-contact_check-second_round/ckpt_676.pt"
-EXP_NAME="PickCan-ppo_rgb-orient-from_scratch"
+EXP_NAME="PickCan-ppo_rgb-orient_fixed-init_pose_in_view-from_scratch"
 WANDB_ENTITY="chad_qian_tamu"
 WANDB_PROJECT_NAME="ManiSkill-PPO"
 WANDB_GROUP="PickCan-Experiments"

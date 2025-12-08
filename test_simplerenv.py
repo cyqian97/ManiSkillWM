@@ -7,13 +7,15 @@ import matplotlib.pyplot as plt
 from mani_skill.utils.wrappers import CPUGymWrapper
 from mani_skill.utils.wrappers.record import RecordEpisode
 
+test_cpu = False
+
 def get_image_from_maniskill3_obs_dict(env, obs, camera_name=None):
     import torch
     # obtain image from observation dictionary returned by ManiSkill environment
     if camera_name is None:
-        if "google_robot" in env.unwrapped.robot_uids.uid:
+        if "google" in env.unwrapped.robot_uids:
             camera_name = "overhead_camera"
-        elif "widowx" in env.unwrapped.robot_uids.uid:
+        elif "widowx" in env.unwrapped.robot_uids:
             camera_name = "3rd_view_camera"
         else:
             raise NotImplementedError()
@@ -27,6 +29,8 @@ def save_obs_images(env, obs, step):
 
     # Create visualization
     plt.figure(figsize=(8, 6))
+    if len(overhead_rgb.shape) == 4:
+        overhead_rgb = overhead_rgb[0].cpu().numpy()
     plt.imshow(overhead_rgb)
     plt.title("Overhead Camera (640x512) - Mounted on Robot Head")
     plt.axis('off')
@@ -35,14 +39,16 @@ def save_obs_images(env, obs, step):
     print(f"Saved camera view to: test_results/camera_views_step{step}.png")
     
 # Create environment
+# Environments used in the experiments: "PickEggplantScene-v0", "PickSpoonScene-v0", "GraspSingleOpenedCokeCanInScene-v0"
 env =  gym.make(
-    "PickEggplantScene-v0",
-    num_envs=1,
+    "GraspSingleOpenedCokeCanInScene-v0",
+    num_envs=2,
     # obs_mode="rgb",
     obs_mode="rgb+segmentation",
     render_mode="rgb_array"
 )
-env = CPUGymWrapper(env)
+if test_cpu:
+    env = CPUGymWrapper(env)
 
 # Wrap with RecordEpisode to record trajectories and/or videos
 env = RecordEpisode(
@@ -81,8 +87,12 @@ while True:
     if save_image and i % 20 == 0:
         save_obs_images(env,obs, i)
 
-    if truncated:
-        break
+    if test_cpu:
+        if truncated:
+            break
+    else:
+        if truncated.any():
+            break
 
 print(f"\n✓ Test completed successfully!")
 env.close()
