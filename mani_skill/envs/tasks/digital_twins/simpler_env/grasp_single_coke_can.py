@@ -24,7 +24,7 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
     The greenscreen replaces the background with a real image while keeping the robot and can visible.
     """
 
-    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation",)
+    SUPPORTED_OBS_MODES = ("state", "rgb", "rgb+segmentation",)
 
     def __init__(self, **kwargs):
         # Greenscreen setup
@@ -270,11 +270,11 @@ class GraspSingleOpenedCokeCanInScene(BaseDigitalTwinEnv):
 
         # Stage 1.5: Gripper orientation reward - encourage top-down grasping pose
         # For top-down grasp, the gripper's x-axis should point downward (negative z in world frame)
-        target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
-        orientation_alignment = (gripper_z_axis * target_orientation).sum(dim=1)
-        orientation_reward = (orientation_alignment + 1) / 2
-        is_not_grasped = 1.0 - info["is_grasped"].float()
-        reward += orientation_reward * is_not_grasped * 0.5  # Only apply when not grasped yet
+        # target_orientation = torch.tensor([0.0, 0.0, -1.0], device=tcp_quat.device)
+        # orientation_alignment = (gripper_z_axis * target_orientation).sum(dim=1)
+        # orientation_reward = (orientation_alignment + 1) / 2
+        # is_not_grasped = 1.0 - info["is_grasped"].float()
+        # reward += orientation_reward * is_not_grasped * 0.5  # Only apply when not grasped yet
 
         # Stage 2: Grasping reward - encourage grasping the object
         is_grasped = info["is_grasped"]

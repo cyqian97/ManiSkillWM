@@ -3,7 +3,7 @@
 
 import gymnasium as gym
 import numpy as np
-import matplotlib.pyplot as plt
+import imageio
 from mani_skill.utils.wrappers import CPUGymWrapper
 from mani_skill.utils.wrappers.record import RecordEpisode
 
@@ -13,35 +13,39 @@ def get_image_from_maniskill3_obs_dict(env, obs, camera_name=None):
     import torch
     # obtain image from observation dictionary returned by ManiSkill environment
     if camera_name is None:
-        if "google" in env.unwrapped.robot_uids:
+        robot_name = env.unwrapped.robot_uids if isinstance(env.unwrapped.robot_uids, str) else env.unwrapped.robot_uids.uid
+        if "google" in robot_name:
             camera_name = "overhead_camera"
-        elif "widowx" in env.unwrapped.robot_uids:
+        elif "widowx" in robot_name:
             camera_name = "3rd_view_camera"
         else:
             raise NotImplementedError()
     return obs["sensor_data"][camera_name]["rgb"]
 
 def save_obs_images(env, obs, step):
-    # Display initial observation images
+    # Get camera image
     print("\n📸 Camera observations:")
     overhead_rgb = get_image_from_maniskill3_obs_dict(env, obs)
     print(f"  overhead_camera: {overhead_rgb.shape} - {overhead_rgb.dtype}")
 
-    # Create visualization
-    plt.figure(figsize=(8, 6))
+    # Convert to numpy array if needed
     if len(overhead_rgb.shape) == 4:
         overhead_rgb = overhead_rgb[0].cpu().numpy()
-    plt.imshow(overhead_rgb)
-    plt.title("Overhead Camera (640x512) - Mounted on Robot Head")
-    plt.axis('off')
-    plt.tight_layout()
-    plt.savefig(f"test_results/camera_views_step{step}.png", dpi=100, bbox_inches='tight')
+    elif hasattr(overhead_rgb, 'cpu'):
+        overhead_rgb = overhead_rgb.cpu().numpy()
+
+    # Ensure uint8 format for image saving
+    if overhead_rgb.dtype != np.uint8:
+        overhead_rgb = (overhead_rgb * 255).astype(np.uint8)
+
+    # Save directly as image
+    imageio.imwrite(f"test_results/camera_views_step{step}.png", overhead_rgb)
     print(f"Saved camera view to: test_results/camera_views_step{step}.png")
     
 # Create environment
-# Environments used in the experiments: "PickEggplantScene-v0", "PickSpoonScene-v0", "GraspSingleOpenedCokeCanInScene-v0"
+# Environments used in the experiments: "PickCarrotScene-v0", "PickEggplantScene-v0", "PickSpoonScene-v0", "GraspSingleOpenedCokeCanInScene-v0"
 env =  gym.make(
-    "GraspSingleOpenedCokeCanInScene-v0",
+    "PickSpoonScene-v0",
     num_envs=2,
     # obs_mode="rgb",
     obs_mode="rgb+segmentation",

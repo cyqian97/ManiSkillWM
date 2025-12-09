@@ -1,3 +1,6 @@
 [submodule "SimplerEnv"]
 	path = SimplerEnv
 	url = https://github.com/cyqian97/SimplerEnvWM.git
+[submodule "RLVR-World"]
+	path = RLVR-World
+	url = https://github.com/thuml/RLVR-World.git

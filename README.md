@@ -18,9 +18,8 @@ ManiSkillWM/
 └── test_simplerenv.py            # Environment testing script
 ```
 
-## Quick Start
 
-### Installation
+## Installation
 Maniskill image rendering requires Vulkan. The experiements are conducted within a docker container.
 To reproduce the experiment results, set up the enviroment as follows:
 ```
@@ -30,10 +29,12 @@ cd ~
 apt install tmux -y
 https://github.com/cyqian97/ManiSkillWM.git
 cd ManiSkillWM
+conda create -n mnsk python=3.12 -y
+conda activate mnsk
 pip install -e .
 ```
 
-### Test Environments
+## Test Environments
 
 Run the test script to verify environment setup and visualize observations:
 
@@ -46,7 +47,7 @@ This will:
 - Execute random actions and save camera observations to `test_results/`
 - Record episode trajectories (.h5) and videos (.mp4)
 
-### Train Policies
+## Train Policies
 
 Launch training using the experiment scripts in `experiments/`:
 
@@ -54,11 +55,14 @@ Launch training using the experiment scripts in `experiments/`:
 # Train coke can grasping 
 bash experiments/run_ppo_can.sh YOUR_WANDB_API_KEY
 
-# Train spoon picking 
-bash experiments/run_ppo_spoon.sh YOUR_WANDB_API_KEY
+# Train carrot picking 
+bash experiments/run_ppo_carrot.sh YOUR_WANDB_API_KEY
 
 # Train eggplant picking 
 bash experiments/run_ppo_eggplant.sh YOUR_WANDB_API_KEY
+
+# Train spoon picking 
+bash experiments/run_ppo_spoon.sh YOUR_WANDB_API_KEY
 ```
 
 Each script:
@@ -72,3 +76,12 @@ Each script:
 - 10M total timesteps (~781 iterations)
 - RGB observations
 - Evaluation every 25 iterations
+
+## Training results
+The final checkpoints of the trainings are upload to [google drrive](https://drive.google.com/drive/folders/1ttrF8IOLcERmnzvxaIr4aXjTO-_UCouS?usp=drive_link).
+To evaluate them, use the following command:
+```
+conda activate mnsk && python examples/baselines/ppo/ppo_rgb.py --env_id="Env_Name" \
+   --evaluate --checkpoint=path/to/model.pt \
+   --num_eval_envs=1 --num-eval-steps=1000
+```

@@ -17,7 +17,7 @@ from mani_skill.utils.structs.types import SimConfig
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class MyTestEnv(BaseBridgeEnv):
-    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_OBS_MODES = ("state", "rgb", "rgb+segmentation")
     SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
     scene_setting = "flat_table"
     objects_excluded_from_greenscreening = [
@@ -389,7 +389,7 @@ class PutSpoonOnTableClothInScene(BaseBridgeEnv):
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class PickSpoonScene(PutSpoonOnTableClothInScene):
-    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_OBS_MODES = ("state", "rgb", "rgb+segmentation")
     SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
     scene_setting = "flat_table"
     objects_excluded_from_greenscreening = [
@@ -413,7 +413,7 @@ class PickSpoonScene(PutSpoonOnTableClothInScene):
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class PickCarrotScene(PutCarrotOnPlateInScene):
-    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_OBS_MODES = ("state", "rgb", "rgb+segmentation")
     SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
     scene_setting = "flat_table"
     objects_excluded_from_greenscreening = [
@@ -437,7 +437,7 @@ class PickCarrotScene(PutCarrotOnPlateInScene):
     asset_download_ids=["bridge_v2_real2sim"],
 )
 class PickEggplantScene(PutEggplantInBasketScene):
-    SUPPORTED_OBS_MODES = ("rgb", "rgb+segmentation")
+    SUPPORTED_OBS_MODES = ("state", "rgb", "rgb+segmentation")
     SUPPORTED_REWARD_MODES = ("normalized_dense", "dense", "sparse", "none")
     scene_setting = "sink"
     objects_excluded_from_greenscreening = ["eggplant"]

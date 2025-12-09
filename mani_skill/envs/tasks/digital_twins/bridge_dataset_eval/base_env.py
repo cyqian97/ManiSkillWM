@@ -628,16 +628,7 @@ class BaseBridgeEnv(BaseDigitalTwinEnv):
         is_consecutive_grasped = info["consecutive_grasp"]
         reward += is_consecutive_grasped
 
-        # # Stage 4: Lifting reward - encourage lifting the object above the table
-        # # Get the initial z position of the table surface (assumed around 0.88 based on xyz_configs)
-        # lift_threshold = 0.02  # Target lift height above table
-        # current_lift = torch.clamp(pos_src[:, 2] - self.surface_height, min=0.0)
-        # lifting_reward = torch.clamp(current_lift / lift_threshold, max=1.0)
-        # reward += lifting_reward * is_consecutive_grasped
 
-        # Stage 5: Placing reward - encourage moving source object to target
-        # Only apply this reward when the source object has no contact with the table
-        # place_reward = 1 - torch.tanh(5 * obj_to_target_dist)
         reward[(no_table_contact & is_consecutive_grasped)] =4.0
         
         # # Stage 6: Bonus for being very close to target

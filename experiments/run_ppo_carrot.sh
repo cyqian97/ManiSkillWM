@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set tmux session name
-TMUX_SESSION="ppo-eggplant"
+TMUX_SESSION="ppo-carrot"
 
 # Set CUDA device (default to 0 if not provided)
 CUDA_DEVICE="0"
@@ -10,7 +10,7 @@ CUDA_DEVICE="0"
 MY_WANDB_API_KEY="${1:-your_default_wandb_api_key}"
 
 # PPO Training Parameters
-ENV_ID="PickEggplantScene-v0"
+ENV_ID="PickCarrotScene-v0"
 CONTROL_MODE="arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos"
 # CONTROL_MODE="pd_ee_delta_pose"
 NUM_ENVS=512
@@ -20,10 +20,10 @@ UPDATE_EPOCHS=8
 NUM_MINIBATCHES=8
 TOTAL_TIMESTEPS=10_000_000
 GAMMA=0.95
-EXP_NAME="PickEggplantScene-ppo_rgb-orient-from_scratch"
+EXP_NAME="PickCarrotScene-ppo_rgb-orient-from_scratch"
 WANDB_ENTITY="chad_qian_tamu"
 WANDB_PROJECT_NAME="ManiSkill-PPO"
-WANDB_GROUP="PickEggplantScene-Experiments"
+WANDB_GROUP="PickCarrotScene-Experiments"
 
 
 

@@ -20,7 +20,6 @@ UPDATE_EPOCHS=8
 NUM_MINIBATCHES=8
 TOTAL_TIMESTEPS=10_000_000
 GAMMA=0.95
-# CHECKPOINT="runs/PutSpoon-ppo_rgb-orient_corrected-contact_check-second_round/ckpt_676.pt"
 EXP_NAME="PickSpoonScene-ppo_rgb-orient-from_scratch"
 WANDB_ENTITY="chad_qian_tamu"
 WANDB_PROJECT_NAME="ManiSkill-PPO"
