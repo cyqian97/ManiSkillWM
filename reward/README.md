@@ -1,9 +1,9 @@
 # Vision Reward Pipeline
 
 ```bash
-mv SimplerEnvWM/reward/pick_cube_vision.py PATH_TO_MANISKIL/mani_skill/envs/tasks/tabletop/pick_cube_vision.py
+mv pick_cube_vision.py PATH_TO_MANISKIL/mani_skill/envs/tasks/tabletop/pick_cube_vision.py
 
-mv SimplerEnvWM/reward/pick_cube_vision_reward.py PATH_TO_MANISKIL/mani_skill/envs/tasks/tabletop/pick_cube_vision_reward.py
+mv pick_cube_vision_reward.py PATH_TO_MANISKIL/mani_skill/envs/tasks/tabletop/pick_cube_vision_reward.py
 
 ```
 
