@@ -6,7 +6,7 @@ import pandas as pd
 api = wandb.Api()
 
 # Get the run
-run = api.run("chad_qian_tamu/ManiSkill-PPO/4vgjj5j1")
+run = api.run("chad_qian_tamu/ManiSkill-PPO/fvzdoexo")
 
 # Get the history with train/return and its min/max if available
 # Wandb typically logs these with __MIN and __MAX suffixes
